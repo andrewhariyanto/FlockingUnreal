@@ -48,7 +48,7 @@ void UFlockingManager::Flock() {
 
 FVector UFlockingManager::Rule1(AAgent* agent) {
     FVector steering = FVector(0.0f, 0.0f, 0.0f);
-    float perceptionRadius = 100.0f;
+    float perceptionRadius = 150.0f;
     int total = 0;
     for (int i = 0; i < Agents.Num(); i++) {
         FVector distance = Agents[i]->GetActorLocation() - agent->GetActorLocation();
@@ -72,7 +72,7 @@ FVector UFlockingManager::Rule1(AAgent* agent) {
 
 FVector UFlockingManager::Rule2(AAgent* agent) {
     FVector steering = FVector(0.0f, 0.0f, 0.0f);
-    float perceptionRadius = 50.0f;
+    float perceptionRadius = 30.0f;
     int total = 0;
     for (int i = 0; i < Agents.Num(); i++) {
         FVector distance = Agents[i]->GetActorLocation() - agent->GetActorLocation();
@@ -92,12 +92,12 @@ FVector UFlockingManager::Rule2(AAgent* agent) {
             steering = steering * agent->MaxForce / steering.Size();
         }
     }
-    return steering * 1.2;
+    return steering*1.2;
 }
 
 FVector UFlockingManager::Rule3(AAgent* agent) {
     FVector steering = FVector(0.0f, 0.0f, 0.0f);
-    float perceptionRadius = 200.0f;
+    float perceptionRadius = 150.0f;
     int total = 0;
     for (int i = 0; i < Agents.Num(); i++) {
         FVector distance = Agents[i]->GetActorLocation() - agent->GetActorLocation();
