@@ -6,9 +6,11 @@
 #include <Runtime/Engine/Classes/Kismet/KismetMathLibrary.h>
 
 #define AGENT_COUNT 30
+// initialization function
 void UFlockingManager::Init(UWorld* world, UStaticMeshComponent* mesh) {
     UE_LOG(LogTemp, Warning, TEXT("Manager initialized"));
 
+    // spawning in agents
     World = world;
     float incr = (PI * 2.f) / AGENT_COUNT;
     for (int i = 0; i < AGENT_COUNT; i++) {
@@ -29,7 +31,9 @@ void UFlockingManager::Init(UWorld* world, UStaticMeshComponent* mesh) {
     initialized = true;
 }
 
+// implementation of flocking behavior of agents
 void UFlockingManager::Flock() {
+    // initialize acceleration vectors
     FVector vector1 = FVector(0.0f, 0.0f, 0.0f);
     FVector vector2 = FVector(0.0f, 0.0f, 0.0f);
     FVector vector3 = FVector(0.0f, 0.0f, 0.0f);
@@ -37,6 +41,7 @@ void UFlockingManager::Flock() {
     FVector vector5 = FVector(0.0f, 0.0f, 0.0f);
 
     for (int i = 0; i < Agents.Num(); i++) {
+        // set vectors to each flocking rule + limiting boundaries + wind
         vector1 = Rule1(Agents[i]);
         vector2 = Rule2(Agents[i]);
         vector3 = Rule3(Agents[i]);
@@ -46,10 +51,12 @@ void UFlockingManager::Flock() {
     }
 }
 
+// rule 1: cohesion - agents will want to head towards the center of mass (average location of agents)
 FVector UFlockingManager::Rule1(AAgent* agent) {
     FVector steering = FVector(0.0f, 0.0f, 0.0f);
     float perceptionRadius = 150.0f;
     int total = 0;
+    // add all the locations of every agent given that they are within perception radius of given agent
     for (int i = 0; i < Agents.Num(); i++) {
         FVector distance = Agents[i]->GetActorLocation() - agent->GetActorLocation();
         if (agent != Agents[i] && distance.Size() < perceptionRadius) {
@@ -58,6 +65,8 @@ FVector UFlockingManager::Rule1(AAgent* agent) {
         }
     }
 
+    // find the average location of the agents within the perception radius
+    // calculate the acceleration based on the average location of the agents
     if (total > 0) {
         steering = steering / total;
         steering = steering - agent->GetActorLocation();
@@ -70,20 +79,25 @@ FVector UFlockingManager::Rule1(AAgent* agent) {
     return steering;
 }
 
+// rule 2: separation - agents will want to move away from each other to avoid collision
 FVector UFlockingManager::Rule2(AAgent* agent) {
     FVector steering = FVector(0.0f, 0.0f, 0.0f);
     float perceptionRadius = 30.0f;
     int total = 0;
+    // add the distances between given agent and every other agent
     for (int i = 0; i < Agents.Num(); i++) {
         FVector distance = Agents[i]->GetActorLocation() - agent->GetActorLocation();
         if (agent != Agents[i] && distance.Size() < perceptionRadius) {
             FVector diff = agent->GetActorLocation() - Agents[i]->GetActorLocation();
+            // normalize the opposing velocity with distance from agent (closer agent gives stronger opposing velocity)
             diff = diff / distance.Size();
             steering = steering + diff;
             total++;
         }
     }
 
+    // find the average velocity to avoid collision
+    // calculate the acceleration based on the calculated velocity
     if (total > 0) {
         steering = steering / total;
         steering = steering * agent->MaxSpeed / steering.Size();
@@ -95,10 +109,12 @@ FVector UFlockingManager::Rule2(AAgent* agent) {
     return steering*1.2;
 }
 
+// rule 3: alignment - agents tend to move towards the average direction
 FVector UFlockingManager::Rule3(AAgent* agent) {
     FVector steering = FVector(0.0f, 0.0f, 0.0f);
     float perceptionRadius = 150.0f;
     int total = 0;
+    // add the velocities of every agent
     for (int i = 0; i < Agents.Num(); i++) {
         FVector distance = Agents[i]->GetActorLocation() - agent->GetActorLocation();
         if (agent != Agents[i] && distance.Size() < perceptionRadius) {
@@ -107,6 +123,8 @@ FVector UFlockingManager::Rule3(AAgent* agent) {
         }
     }
 
+    // find the average velocity of the agents within perception radius
+    // calculate the acceleration based on the average velocity
     if (total > 0) {
         steering = steering / total;
         steering = steering * agent->MaxSpeed / steering.Size();
@@ -118,6 +136,7 @@ FVector UFlockingManager::Rule3(AAgent* agent) {
     return steering;
 }
 
+// Steer agents away from bounding boxes
 FVector UFlockingManager::LimitBoundaries(AAgent* agent) {
     int Xmin = -1000, Xmax = 1000, Ymin = -1000, Ymax = 1000, Zmin = 0, Zmax = 2000;
     FVector result = FVector(0.0f, 0.0f, 0.0f);
@@ -151,6 +170,7 @@ FVector UFlockingManager::LimitBoundaries(AAgent* agent) {
     return result;
 }
 
+// Steer agents with wind
 FVector UFlockingManager::Wind() {
     return FVector(0.05f, 0.0f, 0.0f);
 }
